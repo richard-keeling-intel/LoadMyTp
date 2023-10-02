@@ -23,8 +23,8 @@ IF "%restartSelection%" == "Y" (
 	hdmttosctrl restarttos
 )
 
-REM Create a folder for all console capture output.
-SET PDEdebug=%cd%\\Reports\PDEdebug
+REM Create a folder for all console capture output and ituffs.
+SET PDEdebug=%cd%\PDEdebug
 if not exist %PDEdebug% mkdir %PDEdebug%
 
 REM Create a dateseed for log file naming, that won't have spaces due to non-24hour numbers.
@@ -116,6 +116,9 @@ echo My Init Time is %DURATIONH%:%DURATIONM%:%DURATIONS% >> %PDEdebug%\LoadandIn
 REM close the console.
 %HDMTTOS%\Runtime\Release\SingleScriptCmd.exe stopConsolidatedLogging 
 
+REM Let's get the parent directory name for naming the ituff
+for %%a in ("%~dp0\.") do set "parentfolder=%%~nxa"
+
 :choice
 REM Every time we come here we start a new generic log and set the ituff.
 set hh=%time:~-11,2%
@@ -124,15 +127,15 @@ set hh=%hh:~1%
 Set dateseed=%date:~10,4%%date:~4,2%%date:~7,2%_%hh%%time:~3,2%%time:~6,2%
 %HDMTTOS%\Runtime\Release\SingleScriptCmd.exe startConsolidatedLogging %PDEdebug%\Console_%dateseed%.log true
 REM Update the ituff name and start the lot.
-%HDMTTOS%\Runtime\Release\SingleScriptCmd.exe setUserVar SCVars SC_SUMMARY_NAME %CURRENT_TP_DIR%_%dateseed%.ituff
+%HDMTTOS%\Runtime\Release\SingleScriptCmd.exe setUserVar SCVars SC_SUMMARY_NAME %parentfolder%_%dateseed%.ituff
 %HDMTTOS%\Runtime\Release\SingleScriptCmd.exe startLot
 cls
-echo LoadMyTP.bat Ver39 - Stops if your tape fails to init.
+echo LoadMyTP.bat Ver40
 echo .
 echo Console log file is %PDEdebug%\Console_%dateseed%.log
-echo The ituff is started and is at %HDMTTOS%\%CURRENT_TP_DIR%_%dateseed%.ituff
+echo The ituff is started and is at %HDMTTOS%\%parentfolder%_%dateseed%.ituff
 echo .
-echo Ok your tape %CURRENT_TP_DIR% is loaded and inited, enjoy!
+echo Ok your tape %parentfolder% is loaded and inited, enjoy!
 
 REM Leave at a place where  the user can do a PGMemory dump or just unload and exit.
 echo .
@@ -184,8 +187,8 @@ goto :choice
 :UnloadMyTape
 echo Storing ituff, closing log, and unloading test program.
 %HDMTTOS%\Runtime\Release\SingleScriptCmd.exe endLot
-copy %HDMTTOS%\%CURRENT_TP_DIR%_%dateseed%.ituff %PDEdebug%\%CURRENT_TP_DIR%_%dateseed%_copied.ituff
+copy %HDMTTOS%\%parentfolder%_%dateseed%.ituff* %PDEdebug%\
 %HDMTTOS%\Runtime\Release\SingleScriptCmd.exe stopConsolidatedLogging 
-echo Copied ituff to %cd%\PDEdebug\%CURRENT_TP_DIR%_%dateseed%_copied.ituff
+echo Copied ituff(s) to %PDEdebug%\
 echo Closing console, and doing a  restart
 hdmttosctrl restarttos
